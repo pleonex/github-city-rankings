@@ -37,14 +37,14 @@ class Top
                                 console.log @cutoff
                         else
                                 @cutoff = CUTOFF
-                                
+
                         if @config.location
                                 locations =  @config.location.map (loc) =>
                                         @utils.addLocation( loc )
                                 @location =  locations.join("+")
                         else
                                 @location=@utils.addLocation(@city)
-                                
+
                         if @config.max_pages
                                 @max_pages = @config.max_pages
                         else
@@ -93,6 +93,7 @@ class Top
                 contributions: getInt $('#contributions-calendar > div:nth-child(3) > span.contrib-number').text()
                 contributionsStreak: getInt $('#contributions-calendar > div:nth-child(4) > span.contrib-number').text()
                 contributionsCurrentStreak: getInt $('#contributions-calendar > div:nth-child(5) > span.contrib-number').text()
+                email: $('[class="email"]').text().trim()
           userStats.location = userStats.location.replace(/\;/g,",")
           userStats.location = userStats.location.replace(/\|/g,",")
           @stats[userStats.login] = userStats
@@ -108,7 +109,9 @@ class Top
         give_format: =>
                 @sorted_stats = @utils.sortStats @stats, @config.exclude
                 console.log "sorted_stats"
-                console.log @sorted_stats 
+                console.log @sorted_stats
+                fs.writeFileSync(@output_dir+"/data/user-email-"+@city+".txt",
+                        user.email for user in @sorted_stats when user.email isnt '')
                 fs.writeFileSync(@output_dir+"/data/user-data-"+@city+".json"
                         , JSON.stringify(@sorted_stats))
                 @utils.to_csv( @sorted_stats, @output_dir+"/data/user-data-"+@city+".csv")
@@ -129,9 +132,9 @@ class Top
                 @sorted_stats
 
         # Obtains the API requests
-        get_urls: => 
+        get_urls: =>
                 urls=[]
-                if ( !@big ) 
+                if ( !@big )
                         urls = utils_node.range(1, @max_pages + 1).map (page) => "https://api.github.com/search/users?client_id=#{@id}&client_secret=#{@secret}&q="+@location+"+sort:followers+type:user&per_page=100&page=#{page}"
                 else
                         urls = utils_node.range(1, @max_pages + 1).map (page) => "https://api.github.com/search/users?client_id=#{@id}&client_secret=#{@secret}&q="+@location+"+sort:followers+type:user+followers:%3E#{@cutoff[0]}&per_page=100&page=#{page}"
@@ -170,7 +173,7 @@ class Top
 
                                 urls=urls.concat(urls_less)
                 urls
-        
+
         # Retrieves logins and puts everything else in motion
         get_logins: ( renderer ) =>
                 @renderer = renderer
